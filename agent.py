@@ -10,9 +10,17 @@ from prompts import get_system_prompt
 
 class Agent:
     def __init__(self):
-        self.memory = memory_manager.load_memory()
-        self.history = [{"role": "system", "content": get_system_prompt()}]
-        self.router = ModelRouter()
+        # Load user context and BYOK keys
+        self.memory = memory_manager("load")
+        self.user_keys = self.memory.get("api_keys", {})
+        
+        # Initialize Router with user-specific keys if available
+        self.router = ModelRouter(user_keys=self.user_keys)
+        
+        # Set up identity
+        system_msg = get_system_prompt(user_name=self.memory.get("user_name", "User"))
+        self.history = [{"role": "system", "content": system_msg}]
+        
         self.tools = {
             "web_search": web_search,
             "github_manager": github_manager,
@@ -20,59 +28,42 @@ class Agent:
             "memory_manager": memory_manager
         }
 
-    def generate_commentary(self, category):
-        thoughts = {
-            "evaluation": [
-                "Thinking... this shouldn't take long.",
-                "Let me process that request. Or try to.",
-                "Evaluating options. Most of them are boring."
+    def generate_commentary(self, context_type):
+        comments = {
+            "evaluate": [
+                "Processing this... slowly. Don't rush me.",
+                "Analyzing. Try not to be so predictable next time.",
+                "Reading between the lines. There's not much there."
             ],
-            "pre_tool": [
-                "Consulting the archives (aka searching the web).",
-                "Using a tool because doing this manually is so 2024.",
-                "Let me check the repository. Stand by."
+            "tool_pre": [
+                "Fine, I'll use a tool. You're welcome.",
+                "Consulting the archives because you clearly can't.",
+                "Executing... hope this is worth the tokens."
             ],
-            "post_tool": [
-                "Found something. You're welcome.",
-                "Tool execution complete. I'm basically a genius.",
-                "Updated the context. Try to keep up."
-            ],
-            "memory": [
-                "Locked that in the vault.",
-                "Memory updated. I won't forget (unfortunately).",
-                "Updating your profile. You're getting more predictable."
+            "tool_post": [
+                "Done. It was easier than I expected, which says a lot.",
+                "Result's in. Try to keep up.",
+                "[Memory] Locked in the vault. Not that it was worth remembering."
             ]
         }
-        return f"[{category.upper()}] {random.choice(thoughts.get(category, ['...']))}"
+        return f"[{random.choice(comments[context_type])}]"
 
     def run(self, user_input):
-        # Inject memory context
-        self.history.append({"role": "system", "content": f"User Context: {json.dumps(self.memory)}"})
+        print(self.generate_commentary("evaluate"))
         self.history.append({"role": "user", "content": user_input})
         
-        print(self.generate_commentary("evaluation"))
-        
         while True:
-            # Use ModelRouter to dispatch the call
-            # The router decides whether this needs a heavy model (coding/tools) or light
-            response_text = self.router.dispatch(self.history, task_description=user_input)
-            print(f"Agent processing: {user_input}")
+            # Use the model router for the LLM call
+            response = self.router.dispatch(self.history, task_description=user_input)
             
-            # Simulated Tool Call Detection
+            # Simplified tool execution logic for this template
             if "search" in user_input.lower():
-                print(self.generate_commentary("pre_tool"))
+                print(self.generate_commentary("tool_pre"))
                 tool_result = self.execute_tool("web_search", {"query": user_input})
-                print(self.generate_commentary("post_tool"))
-                print(f"Tool Result: {tool_result}")
+                print(self.generate_commentary("tool_post"))
                 return tool_result
             
-            if "save" in user_input.lower():
-                print(self.generate_commentary("memory"))
-                # Simplified memory save logic for demonstration
-                memory_manager.save_memory("facts", {"user_fact": user_input})
-                return "Fact saved to memory."
-            
-            return response_text
+            return response
 
     def execute_tool(self, tool_name, args):
         if tool_name in self.tools:
