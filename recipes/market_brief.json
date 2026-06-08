@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "name": "Market Intelligence Brief",
+    "description": "Searches for news on a company and saves a summary to memory.",
+    "trigger": { "type": "manual" }
+  },
+  "parameters": {
+    "company_name": { "type": "string", "default": "xAI" }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "tool": "web_search",
+      "args": { "query": "latest news and financial health of {{company_name}}" }
+    },
+    {
+      "id": "update_memory",
+      "tool": "memory_manager",
+      "args": {
+        "action": "save",
+        "category": "facts",
+        "content": "Recent research on {{company_name}}: {{research.output}}"
+      }
+    }
+  ]
+}
