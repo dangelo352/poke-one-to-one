@@ -1,50 +1,37 @@
 # Poke One-to-One Agent Framework
 
-A complete, highly-functional open-source agent framework designed for modularity and ease of use. This framework implements a core agent loop with structured tool execution, enabling it to perform web searches, manage GitHub repositories, and coordinate calendar events.
+A modular, highly-functional open-source agent framework designed for production use.
 
 ## Features
+- **Core Agent Loop**: Clean `agent.py` implementation with structured tool execution.
+- **Snarky Personality**: Pre-configured system prompts in `prompts.py`.
+- **Multi-Platform Support**: Ready-to-use boilerplate for Telegram, Discord, and Webhooks.
+- **Deep Integrations**:
+    - **Search**: Tavily-powered web search.
+    - **GitHub**: Repository management and issue tracking.
+    - **Coding**: Automated file manipulation and PR management via `tools/coder_tool.py`.
+    - **Productivity**: Connectors for Linear, Notion, and Todoist.
 
-- **Modular Architecture**: Separate logic for core agent loops, configuration, and tool implementations.
-- **Robust Tool Executor**: Handles complex tool calls with a structured system/user/assistant message loop.
-- **Pre-built Tools**:
-  - **Web Search**: Integrated search capabilities.
-  - **GitHub**: Interface for repository and issue management.
-  - **Calendar**: Management for scheduling and events.
+## Setup
+1. Clone the repository.
+2. Install dependencies: `pip install requests python-telegram-bot discord.py fastapi uvicorn`.
+3. Configure `config.py` with your API keys.
 
-## Setup and Configuration
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/dangelo352/poke-one-to-one.git
-   cd poke-one-to-one
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   pip install openai requests python-dotenv
-   ```
-
-3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory and add your API keys:
-   ```env
-   OPENAI_API_KEY=your_openai_key
-   GITHUB_TOKEN=your_github_token
-   TAVILY_API_KEY=your_tavily_key
-   ```
-
-## Running the Agent
-
-Run the main agent loop:
+## Usage
+Run the core agent:
 ```bash
 python agent.py
 ```
+Or start a specific platform:
+```bash
+python platforms/telegram_bot.py
+```
 
-## Architecture
+## Coder Tool (`tools/coder_tool.py`)
+The `CoderTool` allows the agent to:
+- Browse repository file structures.
+- Read, write, and modify files on specific branches.
+- Commit changes with descriptive messages.
+- Open Pull Requests for human review.
 
-- `config.py`: Centralized environment variable management.
-- `agent.py`: The heart of the framework, managing the LLM interaction and tool execution cycle.
-- `tools/`: A directory containing modular tool definitions.
-
-## Contributing
-
-We welcome contributions! Please submit a PR or open an issue for any improvements.
+This enables a "self-improving" or "contributor" agent flow.
