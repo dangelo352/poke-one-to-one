@@ -1,0 +1,33 @@
+{
+  "metadata": {
+    "name": "Daily AI News Briefing",
+    "description": "Daily automated search and summary of AI news.",
+    "trigger": {
+      "type": "schedule",
+      "condition": "0 9 * * *"
+    }
+  },
+  "steps": [
+    {
+      "id": "news_search",
+      "tool": "web_search",
+      "args": {
+        "query": "latest artificial intelligence and LLM news today"
+      }
+    },
+    {
+      "id": "summarize",
+      "tool": "agent_reason",
+      "args": {
+        "instruction": "Summarize these news items into a concise briefing for a developer: {{news_search.output}}"
+      }
+    },
+    {
+      "id": "notify",
+      "tool": "notification_manager",
+      "args": {
+        "message": "Good morning. Here is your AI briefing: {{summarize.output}}"
+      }
+    }
+  ]
+}

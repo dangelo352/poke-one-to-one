@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "name": "Supabase Health Check",
+    "description": "Executes a health check query against Supabase.",
+    "trigger": {
+      "type": "schedule",
+      "condition": "every_hour"
+    }
+  },
+  "steps": [
+    {
+      "id": "db_check",
+      "tool": "supabase_manager",
+      "args": {
+        "action": "execute_query",
+        "query": "SELECT 1;"
+      }
+    },
+    {
+      "id": "log_health",
+      "tool": "memory_manager",
+      "args": {
+        "action": "save",
+        "category": "preferences",
+        "content": "Database health check at {{timestamp}}: {{db_check.status}}"
+      }
+    }
+  ]
+}

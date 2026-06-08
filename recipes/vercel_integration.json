@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "name": "Vercel Deployment Status",
+    "description": "Checks the status of the latest deployment.",
+    "trigger": {
+      "type": "webhook"
+    }
+  },
+  "steps": [
+    {
+      "id": "check_deploy",
+      "tool": "vercel_manager",
+      "args": {
+        "action": "get_deployment",
+        "deploymentId": "{{deployment_id}}"
+      }
+    },
+    {
+      "id": "alert_failure",
+      "tool": "notification_manager",
+      "condition": "{{check_deploy.status}} == 'error'",
+      "args": {
+        "message": "Deployment {{deployment_id}} failed. Typical."
+      }
+    }
+  ]
+}

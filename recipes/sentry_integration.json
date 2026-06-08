@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "name": "Sentry Error Report",
+    "description": "Fetches unresolved issues from Sentry.",
+    "trigger": {
+      "type": "schedule",
+      "condition": "every_6_hours"
+    }
+  },
+  "steps": [
+    {
+      "id": "fetch_errors",
+      "tool": "sentry_manager",
+      "args": {
+        "action": "list_issues",
+        "project": "{{project_slug}}",
+        "status": "unresolved"
+      }
+    },
+    {
+      "id": "report",
+      "tool": "notification_manager",
+      "args": {
+        "message": "You have {{fetch_errors.count}} unresolved issues in Sentry. Your code is crying."
+      }
+    }
+  ]
+}

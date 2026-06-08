@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "name": "Linear Issue Tracker",
+    "description": "Creates issues and tracks sprint progress.",
+    "trigger": {
+      "type": "manual"
+    }
+  },
+  "steps": [
+    {
+      "id": "create_issue",
+      "tool": "linear_manager",
+      "args": {
+        "action": "create_issue",
+        "title": "{{title}}",
+        "description": "{{description}}",
+        "teamId": "{{team_id}}"
+      }
+    },
+    {
+      "id": "sync_memory",
+      "tool": "memory_manager",
+      "args": {
+        "action": "save",
+        "category": "preferences",
+        "content": "Tracked Linear issue: {{create_issue.id}}"
+      }
+    }
+  ]
+}

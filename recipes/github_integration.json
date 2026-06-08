@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "name": "GitHub PR Monitor",
+    "description": "Checks open PRs and provides initial reviews.",
+    "trigger": {
+      "type": "webhook",
+      "condition": "on_pull_request"
+    }
+  },
+  "steps": [
+    {
+      "id": "list_prs",
+      "tool": "github_manager",
+      "args": {
+        "action": "list_pull_requests",
+        "repo": "{{repo_name}}"
+      }
+    },
+    {
+      "id": "review_pr",
+      "tool": "github_manager",
+      "args": {
+        "action": "add_comment_to_pending_review",
+        "repo": "{{repo_name}}",
+        "pull_number": "{{pr_id}}",
+        "body": "I've started looking at this. Don't expect me to be impressed."
+      }
+    }
+  ]
+}

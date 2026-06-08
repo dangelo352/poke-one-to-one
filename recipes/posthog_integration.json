@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "name": "PostHog Usage Stats",
+    "description": "Queries key product usage events.",
+    "trigger": {
+      "type": "manual"
+    }
+  },
+  "steps": [
+    {
+      "id": "query_events",
+      "tool": "posthog_manager",
+      "args": {
+        "action": "get_event_count",
+        "event_name": "user_signup",
+        "period": "last_24h"
+      }
+    },
+    {
+      "id": "update_memory",
+      "tool": "memory_manager",
+      "args": {
+        "action": "save",
+        "category": "facts",
+        "content": "Signups in last 24h: {{query_events.count}}"
+      }
+    }
+  ]
+}
