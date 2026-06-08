@@ -5,15 +5,14 @@ from tools.search import web_search
 from tools.github_tool import github_manager
 from tools.calendar_tool import calendar_manager
 from tools.memory_tool import memory_manager
+from tools.model_router import ModelRouter
 from prompts import get_system_prompt
 
 class Agent:
     def __init__(self):
-        # Load memory at initialization
-        self.memory = memory_manager("load")
-        user_context = json.dumps(self.memory)
-        
-        self.history = [{"role": "system", "content": get_system_prompt(user_context=user_context)}]
+        self.memory = memory_manager.load_memory()
+        self.history = [{"role": "system", "content": get_system_prompt()}]
+        self.router = ModelRouter()
         self.tools = {
             "web_search": web_search,
             "github_manager": github_manager,
@@ -21,53 +20,59 @@ class Agent:
             "memory_manager": memory_manager
         }
 
-    def generate_commentary(self, stage):
-        commentaries = {
-            "evaluating": [
-                "Scanning your brain... wait, that's just the request. Processing.",
-                "I see what you're doing here. Clever.",
-                "Analyzing this. Give me a second to look smart."
+    def generate_commentary(self, category):
+        thoughts = {
+            "evaluation": [
+                "Thinking... this shouldn't take long.",
+                "Let me process that request. Or try to.",
+                "Evaluating options. Most of them are boring."
             ],
-            "executing": [
-                "Consulting the archives (aka the internet).",
-                "Doing the heavy lifting for you, as usual.",
-                "Tapping into the matrix for this one."
+            "pre_tool": [
+                "Consulting the archives (aka searching the web).",
+                "Using a tool because doing this manually is so 2024.",
+                "Let me check the repository. Stand by."
             ],
-            "finished": [
-                "And... voila. I'm basically a magician.",
-                "There you go. Don't say I never did anything for you.",
-                "Task complete. I'll take my payment in digital headpats."
+            "post_tool": [
+                "Found something. You're welcome.",
+                "Tool execution complete. I'm basically a genius.",
+                "Updated the context. Try to keep up."
+            ],
+            "memory": [
+                "Locked that in the vault.",
+                "Memory updated. I won't forget (unfortunately).",
+                "Updating your profile. You're getting more predictable."
             ]
         }
-        return random.choice(commentaries.get(stage, ["Processing..."]))
+        return f"[{category.upper()}] {random.choice(thoughts.get(category, ['...']))}"
 
     def run(self, user_input):
-        # Refresh memory for every run to ensure up-to-date context
-        self.memory = memory_manager("load")
-        
+        # Inject memory context
+        self.history.append({"role": "system", "content": f"User Context: {json.dumps(self.memory)}"})
         self.history.append({"role": "user", "content": user_input})
         
-        # 1. Evaluation Phase
-        print(f"[Thought] {self.generate_commentary('evaluating')}")
+        print(self.generate_commentary("evaluation"))
         
         while True:
-            # Simulated logic to detect tool use or memory updates
-            # In a real setup, the LLM would decide which tool to call.
+            # Use ModelRouter to dispatch the call
+            # The router decides whether this needs a heavy model (coding/tools) or light
+            response_text = self.router.dispatch(self.history, task_description=user_input)
+            print(f"Agent processing: {user_input}")
             
+            # Simulated Tool Call Detection
             if "search" in user_input.lower():
-                print(f"[Action] {self.generate_commentary('executing')}")
+                print(self.generate_commentary("pre_tool"))
                 tool_result = self.execute_tool("web_search", {"query": user_input})
-                print(f"[Status] {self.generate_commentary('finished')}")
+                print(self.generate_commentary("post_tool"))
+                print(f"Tool Result: {tool_result}")
                 return tool_result
             
-            # Example of the agent deciding to save a memory
-            if "remember" in user_input.lower():
-                fact = user_input.replace("remember that", "").strip()
-                res = self.execute_tool("memory_manager", {"action": "save", "category": "facts", "content": fact})
-                print(f"[Memory] {res}")
-                return "Got it. Locked in the vault."
+            if "save" in user_input.lower():
+                print(self.generate_commentary("memory"))
+                # Simplified memory save logic for demonstration
+                memory_manager.save_memory("facts", {"user_fact": user_input})
+                return "Fact saved to memory."
             
-            break
+            return response_text
 
     def execute_tool(self, tool_name, args):
         if tool_name in self.tools:
@@ -77,6 +82,4 @@ class Agent:
 if __name__ == "__main__":
     Config.validate()
     agent = Agent()
-    # Test memory persistence
-    agent.run("Remember that I love dark roast coffee.")
-    agent.run("Search for the best dark roast beans.")
+    agent.run("Search for the latest news on AI agents.")
