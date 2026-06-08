@@ -1,29 +1,32 @@
+import os
 import discord
-from discord.ext import commands
 from agent import Agent
-from config import Config
+from tools.orchestrator import Orchestrator
 
-intents = discord.Intents.default()
-intents.message_content = True
+class PokeDiscordClient(discord.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.agent = Agent()
+        self.orchestrator = Orchestrator(self.agent)
 
-bot = commands.Bot(command_prefix='!', intents=intents)
-agent = Agent()
+    async def on_ready(self):
+        print(f'Logged in as {self.user} (ID: {self.user.id})')
+        print('------')
 
-@bot.event
-async def on_ready():
-    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
+    async def on_message(self, message):
+        if message.author.id == self.user.id:
+            return
 
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
+        response = self.orchestrator.handle_request(message.content)
+        await message.channel.send(response)
 
-    if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel):
-        response = agent.run(message.content)
-        await message.reply(response)
+if __name__ == "__main__":
+    token = os.getenv("DISCORD_BOT_TOKEN")
+    if not token:
+        print("Error: DISCORD_BOT_TOKEN not found in environment.")
+        exit(1)
 
-    await bot.process_commands(message)
-
-if __name__ == '__main__':
-    bot.run(Config.DISCORD_TOKEN)
+    intents = discord.Intents.default()
+    intents.message_content = True
+    client = PokeDiscordClient(intents=intents)
+    client.run(token)

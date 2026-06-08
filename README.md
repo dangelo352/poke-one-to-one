@@ -1,52 +1,70 @@
 # Poke One-to-One Agent Framework
 
-A modular, highly-functional open-source agent framework designed for production use, built with an intuitive "brilliant but cynical" personality inspired by Poke.
+Poke is a modular, event-driven agent framework designed for production-grade personal automation. It bridges the gap between consumer messaging clients (Telegram, Discord) and complex LLM orchestration.
 
-## Features
-- **Intelligent Core Loop**: A clean `agent.py` implementation with structured tool execution and first-person "thinking" commentary.
-- **Dynamic Multi-Model Routing**: Automatically routes tasks between OpenAI (GPT-4o/mini), Anthropic (Claude 3.5 Sonnet), and xAI (Grok) based on task complexity.
-- **Persistent Memory**: A local JSON-based long-term memory system that tracks user preferences, facts, and emotional context across sessions.
-- **BYOK (Bring Your Own Key)**: Support for user-specific API keys stored in encrypted memory, allowing the agent to use personal subscriptions.
-- **Advanced Recipe Engine**: Define complex multi-step workflows in JSON blueprints (`recipes/`) that can be executed sequentially or conditionally.
+## 🏗 High-Level Architecture
 
-## Setup
-1. Clone the repository.
-2. Install dependencies:
-   ```bash
-   pip install requests python-dotenv python-telegram-bot discord.py fastapi uvicorn
-   ```
-3. Create a `.env` file based on the config requirements and add your keys (OpenAI, GitHub, etc.).
+Poke follows a "Cognitive Middleware" pattern, decoupling user interfaces from reasoning logic.
 
-## Usage
-Run the core agent:
+- **Dynamic Arbitration**: The system evaluates task complexity (1-10) to select the optimal execution mode:
+    - **Direct**: Standard chat via cost-effective models (GPT-4o-mini).
+    - **Single-Agent**: Tool-specific execution.
+    - **Multi-Agent DAG**: Complex, parallel workflows for heavy tasks (Claude 3.5 Sonnet / GPT-4o).
+- **State Signaling**: Internal turn-lifecycle is tracked via a structured XML-based contract (`<THINKING>`, `<EXECUTING>`, etc.), ensuring clean observability.
+- **Confirmation Engine**: A safety-first interception layer classifies actions as "High-Stakes" (e.g., GitHub pushes, emails) to enforce explicit user approval.
+- **BYOK (Bring Your Own Key)**: Users can provide their own API keys via the persistent memory system, offloading billing to personal subscriptions.
+
+## 🚀 Quickstart
+
+### 1. Installation
+Clone the repo and install dependencies:
 ```bash
-python agent.py
+pip install -r requirements.txt
+# Core dependencies: requests, python-telegram-bot, discord.py, fastapi, uvicorn, python-dotenv
 ```
-Or start a specific platform bot:
+
+### 2. Configuration
+Copy the template and fill in your global API keys:
+```bash
+cp .env.example .env
+```
+*Required: `OPENAI_API_KEY`. Optional: `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `GITHUB_TOKEN`, `TELEGRAM_BOT_TOKEN`, `DISCORD_BOT_TOKEN`.*
+
+### 3. Run the Agent
+
+**Interactive CLI:**
+```bash
+python main.py
+```
+
+**Telegram Bot:**
 ```bash
 python platforms/telegram_bot.py
 ```
 
-## Integrations
-The framework includes built-in support for:
-- **Slack & Discord**: Direct messaging and channel management.
-- **GitHub**: Repository management, automated coding, and PR reviews via `tools/coder_tool.py`.
-- **Communications**: Twilio for SMS/Calling and Resend for style-matched emails.
-- **Payments**: Stripe integration for managing customer subscriptions and billing.
-- **Dev Tools**: Vercel, Sentry, Linear, PostHog, and Supabase for full-stack observability.
-
-## Recipe System (`recipes/`)
-Recipes are modular blueprints that allow you to automate repetitive workflows. Each recipe defines metadata, required parameters, and a sequence of tool steps.
-
-### Example: Market Research
-```json
-{
-  "metadata": { "name": "Market Intelligence", "trigger": { "type": "manual" } },
-  "steps": [
-    { "id": "search", "tool": "web_search", "args": { "query": "News about {{company}}" } },
-    { "id": "save", "tool": "memory_manager", "args": { "action": "save", "category": "facts", "content": "{{search.output}}" } }
-  ]
-}
+**Discord Bot:**
+```bash
+python platforms/discord_bot.py
 ```
 
-Documentation on writing custom recipes can be found in `recipes/schema.json`.
+## 📜 Recipe System
+
+Recipes are modular JSON blueprints for automated workflows.
+
+- **Location**: `/recipes`
+- **Schema**: Defined in `recipes/schema.json`
+
+**Example Workflow:**
+The `daily_ai_news_briefing.json` recipe automates web searching for AI news, summarizing results, and alerting the user.
+
+## 📂 Project Structure
+
+- `main.py`: CLI entrypoint.
+- `agent.py`: Core agent reasoning loop.
+- `tools/`:
+    - `orchestrator.py`: Arbitration and safety guardrails.
+    - `model_router.py`: Multi-model dispatching (incl. Grok).
+    - `recipe_parser.py`: JSON workflow execution.
+    - `memory_tool.py`: Persistent user context and BYOK.
+- `platforms/`: Telegram and Discord connectors.
+- `recipes/`: Pre-defined automation JSONs.
