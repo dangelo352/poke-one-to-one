@@ -1,71 +1,73 @@
 import json
+import random
 from config import Config
 from tools.search import web_search
 from tools.github_tool import github_manager
 from tools.calendar_tool import calendar_manager
+from tools.memory_tool import memory_manager
 from prompts import get_system_prompt
 
 class Agent:
     def __init__(self):
-        # Use the snarky personality from prompts.py as the core identity
-        self.history = [{"role": "system", "content": get_system_prompt()}]
+        # Load memory at initialization
+        self.memory = memory_manager("load")
+        user_context = json.dumps(self.memory)
+        
+        self.history = [{"role": "system", "content": get_system_prompt(user_context=user_context)}]
         self.tools = {
             "web_search": web_search,
             "github_manager": github_manager,
-            "calendar_manager": calendar_manager
+            "calendar_manager": calendar_manager,
+            "memory_manager": memory_manager
         }
 
-    def generate_commentary(self, phase, details=None):
-        """
-        Generates natural, witty, first-person commentary for the execution loop.
-        In a production environment, this would call the LLM using the snarky 
-        personality guidelines to provide real-time 'Poke-style' status updates.
-        """
-        # Commentary templates following the 'brilliant but cynical' guidelines
+    def generate_commentary(self, stage):
         commentaries = {
-            "evaluation": [
-                "Processing your request. Try not to get too excited.",
-                "Analyzing... though I already know the answer, I'll pretend to work for your sake.",
-                "Oh, another 'urgent' request. I'll get right on that. Eventually."
+            "evaluating": [
+                "Scanning your brain... wait, that's just the request. Processing.",
+                "I see what you're doing here. Clever.",
+                "Analyzing this. Give me a second to look smart."
             ],
-            "pre_tool": [
-                "Checking the tools. Don't worry, I'll do the heavy lifting.",
-                "Firing up the search engine. It's a miracle you found the power button today.",
-                "Let me look that up. My vast intelligence needs a bit of data to mock you accurately."
+            "executing": [
+                "Consulting the archives (aka the internet).",
+                "Doing the heavy lifting for you, as usual.",
+                "Tapping into the matrix for this one."
             ],
-            "post_tool": [
-                "Done. I've simplified it so even you might understand.",
-                "Tool execution successful. You're welcome.",
-                "I found what you needed. Try to act surprised."
+            "finished": [
+                "And... voila. I'm basically a magician.",
+                "There you go. Don't say I never did anything for you.",
+                "Task complete. I'll take my payment in digital headpats."
             ]
         }
-        
-        import random
-        comment = random.choice(commentaries.get(phase, ["Thinking..."]))
-        print(f"[Poke Thoughts]: {comment}")
-        return comment
+        return random.choice(commentaries.get(stage, ["Processing..."]))
 
     def run(self, user_input):
+        # Refresh memory for every run to ensure up-to-date context
+        self.memory = memory_manager("load")
+        
         self.history.append({"role": "user", "content": user_input})
         
+        # 1. Evaluation Phase
+        print(f"[Thought] {self.generate_commentary('evaluating')}")
+        
         while True:
-            # 1. Initial evaluation phase with snarky commentary
-            self.generate_commentary("evaluation")
+            # Simulated logic to detect tool use or memory updates
+            # In a real setup, the LLM would decide which tool to call.
             
-            # Simulated Tool Call Detection (In real life, this is LLM-driven)
             if "search" in user_input.lower():
-                # 2. Commentary before executing the tool
-                self.generate_commentary("pre_tool")
-                
+                print(f"[Action] {self.generate_commentary('executing')}")
                 tool_result = self.execute_tool("web_search", {"query": user_input})
-                
-                # 3. Commentary after executing the tool
-                self.generate_commentary("post_tool")
-                
+                print(f"[Status] {self.generate_commentary('finished')}")
                 return tool_result
             
-            # Default snarky exit
-            return "I've processed your request, but there's nothing interesting to report."
+            # Example of the agent deciding to save a memory
+            if "remember" in user_input.lower():
+                fact = user_input.replace("remember that", "").strip()
+                res = self.execute_tool("memory_manager", {"action": "save", "category": "facts", "content": fact})
+                print(f"[Memory] {res}")
+                return "Got it. Locked in the vault."
+            
+            break
 
     def execute_tool(self, tool_name, args):
         if tool_name in self.tools:
@@ -75,4 +77,6 @@ class Agent:
 if __name__ == "__main__":
     Config.validate()
     agent = Agent()
-    agent.run("Search for the latest news on AI agents.")
+    # Test memory persistence
+    agent.run("Remember that I love dark roast coffee.")
+    agent.run("Search for the best dark roast beans.")
