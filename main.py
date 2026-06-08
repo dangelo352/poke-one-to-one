@@ -1,49 +1,37 @@
-import sys
 import argparse
-from agent import Agent
 from tools.orchestrator import Orchestrator
 from tools.model_checker import ModelChecker
+from tools.model_router import ModelRouter
 
-def main():
-    parser = argparse.ArgumentParser(description="Poke One-to-One Agent CLI")
-    parser.add_argument("--check", action="store_true", help="Run model connectivity diagnostics")
-    args = parser.parse_args()
-
-    # Initialize components
-    agent = Agent()
-    orchestrator = Orchestrator(agent)
-
-    if args.check:
-        checker = ModelChecker(user_keys=agent.user_keys)
-        checker.run_diagnostics()
-        return
-
-    print("--- Poke One-to-One Interactive CLI ---")
-    print("Type 'exit' or 'quit' to stop.")
-    print("Type 'check' to run diagnostics.")
+def interactive_loop():
+    orch = Orchestrator()
+    print("\nPoke One-to-One Agent CLI")
+    print("Type 'exit' to quit, 'check' for diagnostics.")
     
     while True:
-        try:
-            user_input = input("\nUser: ").strip()
-            if user_input.lower() in ["exit", "quit"]:
-                break
-            
-            if user_input.lower() == "check":
-                checker = ModelChecker(user_keys=agent.user_keys)
-                checker.run_diagnostics()
-                continue
-
-            if not user_input:
-                continue
-
-            # Run through orchestrator for arbitration and safety
-            response = orchestrator.process_turn(user_input)
-            print(f"\nPoke: {response}")
-
-        except KeyboardInterrupt:
+        user_input = input("\nUser > ")
+        if user_input.lower() in ["exit", "quit"]:
             break
-        except Exception as e:
-            print(f"Error: {e}")
+        
+        if user_input.lower() == "check":
+            checker = ModelChecker(user_keys=orch.agent.user_keys)
+            checker.run_diagnostics()
+            checker.run_routing_test(orch.agent.router)
+            continue
+            
+        response = orch.process_request(user_input)
+        print(f"\nPoke > {response}")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Poke One-to-One Agent CLI")
+    parser.add_argument("--check", action="store_true", help="Run model connectivity and routing diagnostics")
+    args = parser.parse_args()
+
+    if args.check:
+        # For simulation purposes, we create a router with dummy keys if none in env
+        router = ModelRouter()
+        checker = ModelChecker()
+        checker.run_diagnostics()
+        checker.run_routing_test(router)
+    else:
+        interactive_loop()
